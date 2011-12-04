@@ -6,8 +6,11 @@ int readblock(long blocksize, char* buf){
 	//unfilled blocks (the last one, usually) are ignored
 	//returns 0 on a successfully filled block
 	int i=0;
+	int in=0;
 	for (i=0; i<blocksize; i++) {
-		if ((buf[i] = getchar()) == EOF) return(1);
+		in = getchar();
+		if (in == EOF) return(1);
+		buf[i] = in;
 	}
 	return(0);
 }
