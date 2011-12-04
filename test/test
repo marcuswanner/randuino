@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#test each script:
+#raw2bin.py
+#bin2hist.py -s 2048
+#bin2bias.py -s 2048
+#hist2pm3d.py
+#C scripts as well!
+#compare md5sums of good to bad
+
+function checksum {
+	CHECK=$(md5sum $1 | cut -b-32)
+	GOOD=$(md5sum $1.good | cut -b-32)
+	if [[ $CHECK = $GOOD ]]; then 
+		echo "OK: $1"
+	else
+		echo "!!! BAD !!!: $1"
+	fi
+}
+
+if [[ $0 != "./test" ]]; then
+	echo "Run me from my directory!"
+	exit
+fi
+
+#python section
+cat raw-test.good | ../raw2bin.py > sample-raw-test
+cat sample-raw-test | ../bin2bias.py 2048 > sample-raw-test.bias
+cat sample-raw-test | ../bin2hist.py 2048 > sample-raw-test.hist
+cat sample-raw-test.hist | ../hist2pm3d.py > sample-raw-test.hist-cov
+
+echo "Results for python scripts:"
+checksum sample-raw-test
+checksum sample-raw-test.bias
+checksum sample-raw-test.hist
+checksum sample-raw-test.hist-cov
+
+#C section
+cat sample-raw-test | ../bin2bias 2048 > sample-raw-test.bias
+
+echo "Results for C binaries:"
+checksum sample-raw-test.bias

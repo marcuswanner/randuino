@@ -1,0 +1,4 @@
+Description:
+
+It's a project to build a better hardware RNG from an arduino. I came up with a
+bunch of python scripts and file formats to use while processing the data.
