@@ -19,19 +19,17 @@ int readblock(long blocksize, char* buf){
 char bitmaps[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
 
 void checkblock(long blocksize, char* buf) {
-	//add up tallies
 	int cid=0;
-	int bid=0;
+	int mask=0;
 	char comp=1;
 	long counts[2] = {0, 0};
 	for (cid=0; cid<blocksize; cid++) {
-		for (bid=0; bid<8; bid++) {
-			//I think there's something up with this line
-			counts[(buf[cid]&bitmaps[bid]>0)]++;
+		for (mask=1; mask<=128; mask=mask << 1) {
+			if ((buf[cid]&mask)>0) { counts[1]++; }
+			else { counts[0]++; }
 		}
 	}
-	//print data
-	long long sum = counts[0] + counts[1];
+	double sum = counts[0] + counts[1];
 	float p0 = counts[0]/sum;
 	float p1 = counts[1]/sum;
 	printf("%ld %ld %f %f\n", counts[0], counts[1], p0, p1);
