@@ -25,7 +25,6 @@ int main(int argc, char *argv[]) {
 	if (argc > 1) {
 		blocksize = atol(argv[1]);
 	}
-	//printf("BS: %d\n", blocksize);
 	char* buf = malloc(blocksize);
 	while (readblock(blocksize, buf) == 0) {
 		checkblock(blocksize, buf);
