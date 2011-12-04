@@ -35,6 +35,9 @@ echo "Checking C binaries:"
 status raw2bin
 cat raw-test.good | ../raw2bin > sample-raw-test
 checksum sample-raw-test
+status vnf
+cat sample-raw-test | ../vnf > sample-raw-test-vnf
+checksum sample-raw-test-vnf
 status bin2bias
 cat sample-raw-test | ../bin2bias 2048 > sample-raw-test.bias
 checksum sample-raw-test.bias
@@ -43,6 +46,9 @@ echo "Checking python scripts:"
 status raw2bin.py
 cat raw-test.good | ../raw2bin.py > sample-raw-test
 checksum sample-raw-test
+status vnf.py
+cat sample-raw-test | ../vnf.py > sample-raw-test-vnf
+checksum sample-raw-test-vnf
 status bin2bias.py
 cat sample-raw-test | ../bin2bias.py 2048 > sample-raw-test.bias
 checksum sample-raw-test.bias

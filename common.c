@@ -14,3 +14,15 @@ int readblock(long blocksize, char* buf){
 	}
 	return(0);
 }
+
+char partbyte = 0;
+char numbits = 0;
+
+void buildbyte(char in_bit) {
+	//in_bit should be 0 or 1
+	partbyte = (partbyte << 1) + in_bit;
+	numbits = (numbits + 1) % 8;
+	if (numbits == 0){
+		putchar(partbyte);
+	}
+}
