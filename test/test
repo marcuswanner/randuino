@@ -27,6 +27,18 @@ if [[ $0 != "./test" ]]; then
 	exit
 fi
 
+echo "Compiling C binaries..."
+gcc ../raw2bin.c	-o ../raw2bin
+gcc ../bin2bias.c	-o ../bin2bias
+
+echo "Checking C binaries:"
+status raw2bin
+cat raw-test.good | ../raw2bin > sample-raw-test
+checksum sample-raw-test
+status bin2bias
+cat sample-raw-test | ../bin2bias 2048 > sample-raw-test.bias
+checksum sample-raw-test.bias
+
 echo "Checking python scripts:"
 status raw2bin.py
 cat raw-test.good | ../raw2bin.py > sample-raw-test
@@ -40,8 +52,3 @@ checksum sample-raw-test.hist
 status hist2pm3d.py
 cat sample-raw-test.hist | ../hist2pm3d.py > sample-raw-test.hist-cov
 checksum sample-raw-test.hist-cov
-
-echo "Checking C binaries:"
-status bin2bias
-cat sample-raw-test | ../bin2bias 2048 > sample-raw-test.bias
-checksum sample-raw-test.bias
