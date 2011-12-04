@@ -18,25 +18,30 @@ function checksum {
 	fi
 }
 
+function status {
+	echo -ne "$1...\033[0K\r"
+}
+
 if [[ $0 != "./test" ]]; then
 	echo "Run me from my directory!"
 	exit
 fi
 
-#python section
+echo "Checking python scripts:"
+status raw2bin.py
 cat raw-test.good | ../raw2bin.py > sample-raw-test
-cat sample-raw-test | ../bin2bias.py 2048 > sample-raw-test.bias
-cat sample-raw-test | ../bin2hist.py 2048 > sample-raw-test.hist
-cat sample-raw-test.hist | ../hist2pm3d.py > sample-raw-test.hist-cov
-
-echo "Results for python scripts:"
 checksum sample-raw-test
+status bin2bias.py
+cat sample-raw-test | ../bin2bias.py 2048 > sample-raw-test.bias
 checksum sample-raw-test.bias
+status bin2hist.py
+cat sample-raw-test | ../bin2hist.py 2048 > sample-raw-test.hist
 checksum sample-raw-test.hist
+status hist2pm3d.py
+cat sample-raw-test.hist | ../hist2pm3d.py > sample-raw-test.hist-cov
 checksum sample-raw-test.hist-cov
 
-#C section
+echo "Checking C binaries:"
+status bin2bias
 cat sample-raw-test | ../bin2bias 2048 > sample-raw-test.bias
-
-echo "Results for C binaries:"
 checksum sample-raw-test.bias
