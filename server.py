@@ -59,10 +59,11 @@ class SplitThread(Thread):
     "grabs input from an infile and duplicates it across one or more outs"
     "can be tapped in both yank and del modes"
     "file descriptors used by this class must be in BINARY MODE"
-    def init(self, infile, outfiles):
+    def init(self, infile, outfiles, name=None):
         self.setDaemon(True)
         self.infile, self.outfiles = infile, outfiles
         self.tapreqs = Queue()
+        self.name = name
 
     def tap(self, n, copy=False):
         "grab n bytes from the running pipe"
@@ -70,6 +71,7 @@ class SplitThread(Thread):
         "block) will be removed from the pipe and never seen by outfiles"
         "returns bytes"
         "this method SHOULD be threadsafe"
+        "name is used for identifying when we error out"
         nblocks = n//BLOCKSIZE+1
         blocks = []
         for bid in range(nblocks):
@@ -80,7 +82,6 @@ class SplitThread(Thread):
     
     def run(self):
         while 1:
-            #FIXME: when erroring out, we really need to identify who we're talking about
             try:
                 block = self.infile.read(BLOCKSIZE)
                 if len(block) < BLOCKSIZE:
@@ -89,7 +90,7 @@ class SplitThread(Thread):
                 #what do we do now? the command exited, probably
                 #in any case, we can't go on
                 #TODO: investigate what happens to downstream stuff
-                print("SplitThread's infile died...we're leaving now")
+                print("SplitThread's infile died (name=%s)" % self.name)
                 print(sys.exc_info())
                 for out in self.outfiles:
                     out[0].close()
@@ -104,17 +105,17 @@ class SplitThread(Thread):
                     out[0].write(totype(block, out[1]))
                     out[0].flush()
                 except:
-                    print("Removing oufile from SplitThread():")
+                    print("Removing outfile from SplitThread (name=%s):" % self.name)
                     print(sys.exc_info())
                     self.outfiles.remove(out)
 
-def linknodes(innode, outnodes):
+def linknodes(innode, outnodes, name):
     infile = innode.stdout
     outfiles = []
     for node in outnodes:
         outfiles.append([node.stdin, node.intype])
     splitter = SplitThread()
-    splitter.init(infile, outfiles)
+    splitter.init(infile, outfiles, name)
     splitter.start()
     return splitter 
 
@@ -124,8 +125,8 @@ if __name__ == "__main__":
     dumpn = SourceNode(open('server.py', 'r'))
     hexn = StreamNode(['hexdump', '-C'], [bytes, bytes])
     printn = EndNode(sys.stdout)
-    dumps = linknodes(dumpn, [hexn])
-    hexs = linknodes(hexn, [printn])
+    dumps = linknodes(dumpn, [hexn], "dump > hex")
+    hexs = linknodes(hexn, [printn], "hex > print")
     while 1:
         i = dumps.tap(100, False)
         #this makes a mess
