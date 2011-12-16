@@ -64,6 +64,7 @@ class SplitThread(Thread):
         self.infile, self.outfiles = infile, outfiles
         self.tapreqs = Queue()
         self.name = name
+        self.debug = False
 
     def tap(self, n, copy=False):
         "grab n bytes from the running pipe"
@@ -78,14 +79,20 @@ class SplitThread(Thread):
             q = Queue()
             self.tapreqs.put([copy, q])
             blocks.append(q.get())
-        return b''.join([tobytes(b) for b in blocks])[:n]
+        return b''.join([totype(b, bytes) for b in blocks])[:n]
     
+    def addout(self, out):
+        "add an out to the splitter using this method"
+        "argument is in standard format of [fdesc, type]"
+        "to remove an out, simply close the file descriptor"
+        self.outfiles.append(out)
+
     def run(self):
         while 1:
             try:
                 block = self.infile.read(BLOCKSIZE)
                 if len(block) < BLOCKSIZE:
-                    raise Exception("Block not filled")
+                    raise IOError("Block not filled")
             except:
                 #what do we do now? the command exited, probably
                 #in any case, we can't go on
@@ -98,8 +105,12 @@ class SplitThread(Thread):
             if self.tapreqs.qsize():
                 copy, cbq = self.tapreqs.get()
                 cbq.put(block)
+                if self.debug:
+                    print("SplitThread %s giving block to tap" % self.name)
                 if not copy:
                     continue
+            if self.debug:
+                print("SplitThread %s sending block to outfiles" % self.name)
             for out in self.outfiles:
                 try:
                     out[0].write(totype(block, out[1]))
@@ -119,16 +130,28 @@ def linknodes(innode, outnodes, name):
     splitter.start()
     return splitter 
 
+def addnode(splitter, outnode):
+    splitter.addout([node.stdin, node.intype])
+
 
 if __name__ == "__main__":
-    #dumpn = StreamNode(['./dump.py', str(BLOCKSIZE)], [str, None])
-    dumpn = SourceNode(open('server.py', 'r'))
-    hexn = StreamNode(['hexdump', '-C'], [bytes, bytes])
-    printn = EndNode(sys.stdout)
-    dumps = linknodes(dumpn, [hexn], "dump > hex")
-    hexs = linknodes(hexn, [printn], "hex > print")
+    #dumpn = StreamNode(['cat', '/dev/urandom'], [bytes, None])
+    dumpn = StreamNode(['./dump.py', str(BLOCKSIZE)], [bytes, None])
+    #dumpn = SourceNode(open('server.py', 'r'))
+    #hexn = StreamNode(['hexdump', '-C'], [bytes, bytes])
+    vnfn = StreamNode('./vnf', [bytes, bytes])
+    #printn = EndNode(sys.stdout)
+    dumps = linknodes(dumpn, [vnfn], "dump")
+    dumps.debug = True
+    vnfs = linknodes(vnfn, [], "vnf")
+    vnfs.debug = True
+    #hexs = linknodes(hexn, [printn], "hex > print")
     while 1:
-        i = dumps.tap(100, False)
+        sleep(1)
+        print("dumps", dumps.tap(100, True))
+        print("vnfs", vnfs.tap(100, True))
+        #i = dumps.tap(100, False)
         #this makes a mess
-        print(i)
+        #print(i)
+
 
